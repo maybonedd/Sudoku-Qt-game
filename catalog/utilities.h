@@ -155,5 +155,9 @@ namespace COLOR_STYLE
     static const QColor green_color         = QColor(Qt::green);
 }
 
+enum class GameMode {
+    NORMAL,
+    USER_CREATE
+};
 
 #endif // UTILITIES_H

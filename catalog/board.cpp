@@ -95,16 +95,34 @@ void Board::handleClicked(QPointF clickedPoint)
 }
 
 
-void Board::doSolution()
-{
-    for(int i = 0; i < BOARD_STYLE::grid_size; ++i)
-    {
-        for(int j = 0; j < BOARD_STYLE::grid_size; ++j)
-        {
-            m_grid[i][j] = m_sudoku->getValidMatVal(i, j);
-            if(!m_squares[i][j]->m_locked)
-            {
-                m_squares[i][j]->setEnteredText(m_grid[i][j]);
+void Board::doSolution() {
+    if (m_gameMode == GameMode::USER_CREATE) {
+        Sudoku tempSudoku(BOARD_STYLE::grid_size, 0);
+        for (int i = 0; i < BOARD_STYLE::grid_size; i++) {
+            for (int j = 0; j < BOARD_STYLE::grid_size; j++) {
+                tempSudoku.setMatVal(i, j, m_grid[i][j]);
+            }
+        }
+
+        if (tempSudoku.solve()) {
+            for (int i = 0; i < BOARD_STYLE::grid_size; i++) {
+                for (int j = 0; j < BOARD_STYLE::grid_size; j++) {
+                    m_grid[i][j] = tempSudoku.getMatVal(i, j);
+                    if (!m_squares[i][j]->m_locked) {
+                        m_squares[i][j]->setEnteredText(m_grid[i][j]);
+                    }
+                }
+            }
+        } else {
+            qDebug() << "This puzzle has no solution!";
+        }
+    } else {
+        for (int i = 0; i < BOARD_STYLE::grid_size; ++i) {
+            for (int j = 0; j < BOARD_STYLE::grid_size; ++j) {
+                m_grid[i][j] = m_sudoku->getValidMatVal(i, j);
+                if (!m_squares[i][j]->m_locked) {
+                    m_squares[i][j]->setEnteredText(m_grid[i][j]);
+                }
             }
         }
     }
@@ -140,6 +158,97 @@ void Board::unselectSquares()
         foreach(Square* square, vec)
         {
             square->setDefaultColor();
+        }
+    }
+}
+
+void Board::switchMode() {
+    if (m_gameMode == GameMode::NORMAL) {
+        setGameMode(GameMode::USER_CREATE);
+    } else {
+        setGameMode(GameMode::NORMAL);
+    }
+}
+
+void Board::setGameMode(GameMode mode) {
+    m_gameMode = mode;
+    if (mode == GameMode::USER_CREATE) {
+        clearBoard();
+    } else {
+        generate();
+    }
+}
+
+void Board::clearBoard() {
+    for (int i = 0; i < BOARD_STYLE::grid_size; i++) {
+        for (int j = 0; j < BOARD_STYLE::grid_size; j++) {
+            m_grid[i][j] = 0;
+            m_squares[i][j]->setText(0);
+            m_squares[i][j]->m_locked = false;
+            m_squares[i][j]->m_correctNumber = 0;
+            m_squares[i][j]->setDefaultColor();
+            m_squares[i][j]->setBlackTextColor();
+        }
+    }
+    m_moveHistory.clear();
+}
+
+void Board::undoLastMove() {
+    if (!m_moveHistory.isEmpty()) {
+        QPoint lastMove = m_moveHistory.pop();
+        int row = lastMove.x();
+        int col = lastMove.y();
+
+        m_grid[row][col] = 0;
+        m_squares[row][col]->setText(0);
+        m_squares[row][col]->m_enteredNumber = 0;
+        m_squares[row][col]->setDefaultColor();
+    }
+}
+
+bool Board::validateUserInput(int row, int col, int num) const {
+    if (num == 0) return true;
+
+    for (int j = 0; j < BOARD_STYLE::grid_size; j++) {
+        if (j != col && m_grid[row][j] == num) {
+            return false;
+        }
+    }
+
+    for (int i = 0; i < BOARD_STYLE::grid_size; i++) {
+        if (i != row && m_grid[i][col] == num) {
+            return false;
+        }
+    }
+
+    int boxRow = row - row % 3;
+    int boxCol = col - col % 3;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if ((boxRow + i != row || boxCol + j != col) &&
+                m_grid[boxRow + i][boxCol + j] == num) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+void Board::handleInput(int num) {
+    if (m_clickedSquare) {
+        if (m_gameMode == GameMode::USER_CREATE) {
+            if (validateUserInput(m_choosenSquare.x(), m_choosenSquare.y(), num)) {
+                m_grid[m_choosenSquare.x()][m_choosenSquare.y()] = num;
+                m_clickedSquare->setEnteredText(num);
+                m_moveHistory.push(m_choosenSquare);
+            } else {
+                m_clickedSquare->setText(0);
+                m_clickedSquare->m_enteredNumber = 0;
+            }
+        } else {
+            m_clickedSquare->setEnteredText(num);
+            m_grid[m_choosenSquare.x()][m_choosenSquare.y()] = num;
         }
     }
 }

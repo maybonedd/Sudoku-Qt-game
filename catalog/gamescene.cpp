@@ -87,10 +87,23 @@ void GameScene::onUserCreate()
     m_modeButton->setPos(SCREEN::PHYSICAL_SIZE.width() - (SCREEN::PHYSICAL_SIZE.width() - BOARD_STYLE::size - BOARD_STYLE::offset) / 2,
                         600);
     connect(m_modeButton, &Button::clicked, [this](){
-       qDebug() << "Switched";
-        //board.doSolution(); здесь функция для переключения режима
+        qDebug() << "Switched mode";
+        board.switchMode();
+
+        if (board.gameMode() == GameMode::USER_CREATE) {
+            m_modeButton->setText("Normal mode");
+        } else {
+            m_modeButton->setText("Create mode");
+        }
     });
     addItem(m_modeButton);
+    m_undoButton = new Button("Undo");
+    m_undoButton->setPos(SCREEN::PHYSICAL_SIZE.width() - (SCREEN::PHYSICAL_SIZE.width() - BOARD_STYLE::size - BOARD_STYLE::offset) / 2,
+                         750);
+    connect(m_undoButton, &Button::clicked, [this](){
+        board.undoLastMove();
+    });
+    addItem(m_undoButton);
 
     initBoard();
 

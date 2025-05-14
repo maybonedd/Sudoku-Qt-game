@@ -203,3 +203,36 @@ void Sudoku::setValidMat()
         }
     }
 }
+
+bool Sudoku::solve() {
+    int row, col;
+
+    if (!findEmptyLocation(row, col)) {
+        return true;
+    }
+
+    for (int num = 1; num <= Number_columns; num++) {
+        if (CheckIfSafe(row, col, num)) {
+            mat[row][col] = num;
+
+            if (solve()) {
+                return true;
+            }
+
+            mat[row][col] = 0;
+        }
+    }
+
+    return false;
+}
+
+bool Sudoku::findEmptyLocation(int &row, int &col) {
+    for (row = 0; row < Number_columns; row++) {
+        for (col = 0; col < Number_columns; col++) {
+            if (mat[row][col] == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
